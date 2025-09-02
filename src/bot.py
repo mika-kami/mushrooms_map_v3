@@ -59,7 +59,9 @@ async def run_command(update: Update, context: CallbackContext):
     # Check if the user sending the command is the admin
     user_id = update.message.from_user.id
     if str(user_id) != str(ADMIN_CHAT_ID):
-        await update.message.reply_text("Sorry, you are not authorized to use this command.")
+        await update.message.reply_text(
+            "Sorry, you are not authorized to use this command."
+        )
         return
 
     # If the user is authorized, proceed with the original logic
@@ -120,7 +122,7 @@ def main():
     # Schedule the job to run at 10:00 UTC
     application.job_queue.run_daily(
         run_job,
-        time=time(hour=UPD1_TIME_UTC['hh'], minute=UPD1_TIME_UTC['mm']),
+        time=time(hour=UPD1_TIME_UTC["hh"], minute=UPD1_TIME_UTC["mm"]),
         chat_id=ADMIN_CHAT_ID,
         name="mushroom_map_job_1000_UTC",
     )
@@ -128,11 +130,13 @@ def main():
     # Schedule the job to run again at 22:00 UTC
     application.job_queue.run_daily(
         run_job,
-        time=time(hour=UPD2_TIME_UTC['hh'], minute=UPD2_TIME_UTC['mm']),
+        time=time(hour=UPD2_TIME_UTC["hh"], minute=UPD2_TIME_UTC["mm"]),
         chat_id=ADMIN_CHAT_ID,
         name="mushroom_map_job_2000_UTC",
     )
-    print(f"Scheduled jobs to run at {UPD1_TIME_UTC['hh']}:{UPD1_TIME_UTC['mm']:02d} and {UPD2_TIME_UTC['hh']}:{UPD2_TIME_UTC['mm']:02d} UTC.")
+    print(
+        f"Scheduled jobs to run at {UPD1_TIME_UTC['hh']}:{UPD1_TIME_UTC['mm']:02d} and {UPD2_TIME_UTC['hh']}:{UPD2_TIME_UTC['mm']:02d} UTC."
+    )
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("run", run_command))

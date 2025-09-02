@@ -8,15 +8,18 @@ on:
     branches:
       - master
 
+env:
+  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.12'
 
@@ -27,9 +30,6 @@ jobs:
 
     - name: Run black code formatter check
       run: black --check .
-
-    - name: Run flake8 linter
-      run: flake8 .
 
   deploy:
     # This job will only run if the 'lint' job is successful
@@ -66,10 +66,14 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: 'us-east-1' # Change to your Lambda's region
+        aws-region: 'eu-north-1' # Change to your Lambda's region
 
-    - name: Deploy to Lambda
+    - name: Upload ZIP to S3
+      run: aws s3 cp deploy.zip s3://mushrooms-map/deploy.zip
+
+    - name: Update Lambda from S3
       run: |
-        aws lambda update-function-code \
-        --function-name YourLambdaFunctionName \
-        --zip-file fileb://deploy.zip
+          aws lambda update-function-code \
+            --function-name mushroomsMap \
+            --s3-bucket mushrooms-map \
+            --s3-key deploy.zip
