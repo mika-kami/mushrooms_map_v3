@@ -1,0 +1,9 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+*.env
+structure.txt
+
+# Local files
+maps/
