@@ -153,7 +153,7 @@ def create_comparison_map() -> Optional[str]:
         )
 
     total_weights = high_prob_weights + very_high_prob_weights
-    darken_factor = np.maximum(1.0 - total_weights, 0.5)
+    darken_factor = np.maximum(1.0 - total_weights, 0.75)
     for c in range(3):
         final_map_np[:, :, c] *= darken_factor
 

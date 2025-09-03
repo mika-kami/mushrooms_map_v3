@@ -127,7 +127,8 @@ def main():
         name="mushroom_map_job_1000_UTC",
     )
 
-    # Schedule the job to run again at 22:00 UTC
+    # Schedule the job to run again at 19:00 UTC
+    """    
     application.job_queue.run_daily(
         run_job,
         time=time(hour=UPD2_TIME_UTC["hh"], minute=UPD2_TIME_UTC["mm"]),
@@ -137,7 +138,7 @@ def main():
     print(
         f"Scheduled jobs to run at {UPD1_TIME_UTC['hh']}:{UPD1_TIME_UTC['mm']:02d} and {UPD2_TIME_UTC['hh']}:{UPD2_TIME_UTC['mm']:02d} UTC."
     )
-
+    """
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("run", run_command))
     application.add_handler(CommandHandler("raw", raw_command))
