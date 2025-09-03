@@ -8,7 +8,7 @@ load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 # --- File Paths ---
-MAPS_DIR = "/tmp/maps"
+MAPS_DIR = "../maps"
 RAW_DIR = os.path.join(MAPS_DIR, "raw")
 PROCESSED_DIR = os.path.join(MAPS_DIR, "processed")
 GEOJSON_DIR = os.path.join(MAPS_DIR, "geojson")  # Directory for GeoJSON files

@@ -45,6 +45,14 @@ def _extract_date_from_filename(filename: str, prefix: str) -> Optional[str]:
     return match.group(1) if match else None
 
 
+def _parse_date_string(date_str: str) -> Optional[datetime]:
+    """Parse date string in dd.mm.yyyy format to datetime object."""
+    try:
+        return datetime.strptime(date_str, "%d.%m.%Y")
+    except ValueError:
+        return None
+
+
 def _scan_date_from_image_easyocr(image: Image.Image) -> Optional[str]:
     """Scans an image for a date pattern."""
     try:
@@ -174,7 +182,7 @@ def create_comparison_map() -> Optional[str]:
     the existing processed map. Ensures only one processed image is stored.
     Now includes image cropping and generates GeoJSON data for geographic mapping.
     """
-    # Get the most recent raw file by modification time (newest first)
+    # Get raw files and sort by date in filename (newest first)
     if not os.path.exists(RAW_DIR):
         print("Raw directory doesn't exist")
         return None
@@ -184,19 +192,26 @@ def create_comparison_map() -> Optional[str]:
         print("No raw images available to process.")
         return None
 
-    # Sort by modification time, newest first
-    raw_files_with_paths = [(f, os.path.join(RAW_DIR, f)) for f in raw_files]
-    raw_files_sorted = sorted(raw_files_with_paths, key=lambda x: os.path.getmtime(x[1]), reverse=True)
+    # Extract dates and sort by actual date (newest first)
+    raw_files_with_dates = []
+    for filename in raw_files:
+        date_str = _extract_date_from_filename(filename, "image_")
+        if date_str:
+            date_obj = _parse_date_string(date_str)
+            if date_obj:
+                filepath = os.path.join(RAW_DIR, filename)
+                raw_files_with_dates.append((filename, filepath, date_obj, date_str))
 
-    # Get the newest raw file
-    latest_raw_filename, latest_raw_path = raw_files_sorted[0]
-    print(f"Latest raw file by modification time: {latest_raw_filename}")
-
-    # 1. Extract date from the NEWEST raw file (by modification time)
-    latest_raw_date = _extract_date_from_filename(latest_raw_filename, "image_")
-    if not latest_raw_date:
-        print(f"Could not extract date from raw file: {latest_raw_filename}")
+    if not raw_files_with_dates:
+        print("No valid date files found")
         return None
+
+    # Sort by date (newest first)
+    raw_files_sorted = sorted(raw_files_with_dates, key=lambda x: x[2], reverse=True)
+
+    # Get the newest raw file by date
+    latest_raw_filename, latest_raw_path, latest_date_obj, latest_raw_date = raw_files_sorted[0]
+    print(f"Latest raw file by date: {latest_raw_filename} ({latest_raw_date})")
 
     print(f"Extracted date from newest raw file: {latest_raw_date}")
     target_processed_filename = f"processed_{latest_raw_date}.png"
@@ -225,34 +240,34 @@ def create_comparison_map() -> Optional[str]:
         _generate_geojson_with_correct_date(target_processed_filepath, latest_raw_date)
         return target_processed_filepath
 
-    # 3. Process images - use the same sorted order for consistency
+    # 3. Process images - use the date-sorted order for consistency
     print(f"Generating new processed map for date: {latest_raw_date}")
 
-    # Use already sorted raw files (newest first) for processing weights
-    raw_image_paths = [path for _, path in raw_files_sorted]
-    print(f"Processing {len(raw_image_paths)} raw images in order:")
-    for i, path in enumerate(raw_image_paths[:len(IMAGE_WEIGHTS)]):
-        print(f"  {i + 1}. {os.path.basename(path)} (weight: {IMAGE_WEIGHTS[i] if i < len(IMAGE_WEIGHTS) else 0})")
+    # Use date-sorted raw files (newest first) for processing weights
+    print(f"Processing {len(raw_files_sorted)} raw images in chronological order (newest first):")
+    for i, (filename, filepath, date_obj, date_str) in enumerate(raw_files_sorted[:len(IMAGE_WEIGHTS)]):
+        weight = IMAGE_WEIGHTS[i] if i < len(IMAGE_WEIGHTS) else 0
+        print(f"  {i + 1}. {filename} ({date_str}) (weight: {weight})")
 
-    if len(raw_image_paths) == 1:
+    if len(raw_files_sorted) == 1:
         # Copy single image and crop it
-        shutil.copy(raw_image_paths[0], target_processed_filepath)
+        shutil.copy(raw_files_sorted[0][1], target_processed_filepath)
         crop_processed_image(target_processed_filepath)
         # Generate GeoJSON for single image with correct date
         _generate_geojson_with_correct_date(target_processed_filepath, latest_raw_date)
         return target_processed_filepath
 
     # Process multiple images for comparison
-    base_image = Image.open(raw_image_paths[0]).convert("RGB")
+    base_image = Image.open(raw_files_sorted[0][1]).convert("RGB")
     final_map_np = np.array(base_image, dtype=np.float32)
 
     high_prob_weights = np.zeros(final_map_np.shape[:2], dtype=np.float32)
     very_high_prob_weights = np.zeros(final_map_np.shape[:2], dtype=np.float32)
 
-    for i, img_path in enumerate(raw_image_paths[: len(IMAGE_WEIGHTS)]):
-        image = Image.open(img_path).convert("RGB")
+    for i, (filename, filepath, date_obj, date_str) in enumerate(raw_files_sorted[:len(IMAGE_WEIGHTS)]):
+        image = Image.open(filepath).convert("RGB")
         weight = IMAGE_WEIGHTS[i]
-        print(f"Processing {os.path.basename(img_path)} with weight {weight}")
+        print(f"Processing {filename} ({date_str}) with weight {weight}")
 
         high_prob_weights += (
                 np.array(_get_color_mask(image, HIGH_PROB_RGB)) / 255.0 * weight
