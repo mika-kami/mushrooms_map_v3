@@ -145,8 +145,7 @@ def create_comparison_map() -> Optional[str]:
     high_prob_weights = np.zeros(final_map_np.shape[:2], dtype=np.float32)
     very_high_prob_weights = np.zeros(final_map_np.shape[:2], dtype=np.float32)
     high_prob_occurrence_count = np.zeros(final_map_np.shape[:2], dtype=np.int8)
-    very_high_prob_occurrence_count= np.zeros(final_map_np.shape[:2], dtype=np.int8)
-
+    very_high_prob_occurrence_count = np.zeros(final_map_np.shape[:2], dtype=np.int8)
 
     # Process each raw image
     for i, img_path in enumerate(raw_images[: len(IMAGE_WEIGHTS)]):
