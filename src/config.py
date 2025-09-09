@@ -13,8 +13,7 @@ RAW_DIR = os.path.join(MAPS_DIR, "raw")
 PROCESSED_DIR = os.path.join(MAPS_DIR, "processed")
 
 # --- Time To Run Job ---
-UPD1_TIME_UTC = {"hh": 10, "mm": 00}
-UPD2_TIME_UTC = {"hh": 19, "mm": 00} # Temporary disabled
+UPD_TIME_UTC = {"hh": 10, "mm": 00}
 
 # --- Image Processing ---
 IMAGE_URL = "https://info.chmi.cz/bio/maps/houby_1.png"

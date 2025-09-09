@@ -1,12 +1,11 @@
 # Core application dependencies
 python-telegram-bot[job-queue]>=20.6
 requests>=2.31.0
-Pillow>=11.3.0
 python-dotenv>=1.0.0
+Pillow>=11.3.0
 numpy>=1.26.1
 easyocr>=1.7.1
 torch>=2.1.0
-torchvision>=0.16.0
 
 # Development and linting dependencies
 black>=23.9.1

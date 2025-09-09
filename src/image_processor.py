@@ -100,8 +100,9 @@ def _get_color_mask(image: Image.Image, target_rgb: tuple) -> Image.Image:
 
 def create_comparison_map() -> Optional[str]:
     """
-    Generates a processed map ONLY if the latest raw image is newer than
-    the existing processed map. Ensures only one processed image is stored.
+    Generates a processed map by comparing the last few raw images.
+    - Darkens areas where 'HIGH' probability overlaps across at least two maps.
+    - Highlights stable 'VERY HIGH' probability areas in blue.
     """
     latest_raw_path = get_latest_image_path(RAW_DIR)
     if not latest_raw_path:
@@ -134,29 +135,51 @@ def create_comparison_map() -> Optional[str]:
 
     if len(raw_images) == 1:
         shutil.copy(raw_images[0], target_processed_filepath)
+        print("Only one raw image found. Copied it as the processed map.")
         return target_processed_filepath
 
     base_image = Image.open(raw_images[0]).convert("RGB")
     final_map_np = np.array(base_image, dtype=np.float32)
 
+    # Initialize arrays for weighted probabilities and occurrence counts
     high_prob_weights = np.zeros(final_map_np.shape[:2], dtype=np.float32)
     very_high_prob_weights = np.zeros(final_map_np.shape[:2], dtype=np.float32)
+    high_prob_occurrence_count = np.zeros(final_map_np.shape[:2], dtype=np.int8)
+    very_high_prob_occurrence_count= np.zeros(final_map_np.shape[:2], dtype=np.int8)
 
+
+    # Process each raw image
     for i, img_path in enumerate(raw_images[: len(IMAGE_WEIGHTS)]):
         image = Image.open(img_path).convert("RGB")
         weight = IMAGE_WEIGHTS[i]
-        high_prob_weights += (
-            np.array(_get_color_mask(image, HIGH_PROB_RGB)) / 255.0 * weight
-        )
-        very_high_prob_weights += (
-            np.array(_get_color_mask(image, VERY_HIGH_PROB_RGB)) / 255.0 * weight
-        )
 
+        # Process HIGH probability areas
+        high_prob_mask = np.array(_get_color_mask(image, HIGH_PROB_RGB)) / 255.0
+        high_prob_weights += high_prob_mask * weight
+        high_prob_occurrence_count += (high_prob_mask > 0).astype(np.int8)
+
+        # Process VERY HIGH probability areas
+        very_high_prob_mask = (
+            np.array(_get_color_mask(image, VERY_HIGH_PROB_RGB)) / 255.0
+        )
+        very_high_prob_weights += very_high_prob_mask * weight
+        very_high_prob_occurrence_count += (very_high_prob_mask > 0).astype(np.int8)
+
+    # An area is only considered if it appears in at least 2 images.
+    # Zero out the weights for areas that do not meet the overlap criteria.
+    high_prob_weights[high_prob_occurrence_count < 2] = 0
+    very_high_prob_weights[very_high_prob_occurrence_count < 2] = 0
+
+    # Calculate total weights for the darkening effect.
+    # Darkening is caused by overlapping HIGH prob areas and any VERY HIGH prob areas.
     total_weights = high_prob_weights + very_high_prob_weights
     darken_factor = np.maximum(1.0 - total_weights, 0.75)
+
+    # Apply darkening to the entire map
     for c in range(3):
         final_map_np[:, :, c] *= darken_factor
 
+    # Highlight the most stable VERY HIGH probability areas in blue
     highlight_mask = very_high_prob_weights > 0.7
     final_map_np[highlight_mask] = HIGHLIGHT_COLOR
 
