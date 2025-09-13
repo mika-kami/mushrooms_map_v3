@@ -1,4 +1,4 @@
-name: Lint, Build, and Deploy to AWS Lambd
+name: Lint, Build, and Deploy to AWS Lambda
 
 on:
   push:
