@@ -13,7 +13,7 @@ env:
   TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
   AWS_REGION: 'eu-north-1'
   ECR_REPOSITORY: 'mushrooms-map'
-  LAMBDA_FUNCTION_NAME: 'mushroomsMap'
+  LAMBDA_FUNCTION_NAME: 'mushroomsMapDocker'
 
 jobs:
   lint:
