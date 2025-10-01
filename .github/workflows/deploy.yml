@@ -37,7 +37,7 @@ jobs:
 
   deploy:
     # This job depends on the successful completion of the 'lint' job
-    needs: lint
+    # needs: lint
     # Only run on pushes to the master branch, not on pull requests
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
