@@ -80,3 +80,31 @@ jobs:
       run: |
         aws lambda wait function-updated \
           --function-name ${{ env.LAMBDA_FUNCTION_NAME }}
+
+    - name: Create EventBridge Schedule
+      run: |
+        # Get Lambda function ARN
+        LAMBDA_ARN=$(aws lambda get-function \
+          --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+          --query 'Configuration.FunctionArn' \
+          --output text)
+        
+        # Create or update EventBridge rule
+        aws events put-rule \
+          --name mushroom-map-daily-job \
+          --schedule-expression "cron(0 10 * * ? *)" \
+          --state ENABLED || true
+        
+        # Add Lambda as target
+        aws events put-targets \
+          --rule mushroom-map-daily-job \
+          --targets "Id"="1","Arn"="$LAMBDA_ARN" || true
+        
+        # Add permission
+        aws lambda add-permission \
+          --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
+          --statement-id mushroom-map-schedule \
+          --action lambda:InvokeFunction \
+          --principal events.amazonaws.com \
+          --source-arn arn:aws:events:${{ env.AWS_REGION }}:$(aws sts get-caller-identity --query Account --output text):rule/mushroom-map-daily-job \
+          || true
