@@ -5,8 +5,8 @@ import logging
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-from src.config import TELEGRAM_TOKEN
-from src.image_processor import (
+from config import TELEGRAM_TOKEN
+from image_processor import (
     download_image,
     create_comparison_map,
     get_latest_image_path,
